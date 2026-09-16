@@ -1,230 +1,199 @@
-/* ================= PADDY'S PROFILE 17 ================= */
-
-const PROFILE_URL =
-  "https://paddycodes17.github.io/PADDY-PROFILE-17-WEB/";
-
-
-/* ================= TOAST ================= */
+const toast = document.getElementById("toast");
 
 function showToast(message) {
-
-  const toast = document.getElementById("toast");
-
-  if (!toast) return;
-
   toast.textContent = message;
-
   toast.classList.add("show");
 
-  clearTimeout(window.toastTimer);
-
-  window.toastTimer = setTimeout(() => {
+  setTimeout(() => {
     toast.classList.remove("show");
   }, 2500);
 }
 
 
-/* ================= SHARE ================= */
-
+// SHARE PROFILE
 async function shareProfile() {
 
-  const shareData = {
-    title: "PADDY'S PROFILE 17",
-    text: "Check out PADDY'S PROFILE 17",
-    url: PROFILE_URL
-  };
+  const url = window.location.href;
 
-  try {
+  if (navigator.share) {
 
-    if (navigator.share) {
+    try {
+      await navigator.share({
+        title: "PADDY'S PROFILE 17",
+        text: "Check out PADDY'S digital profile.",
+        url: url
+      });
 
-      await navigator.share(shareData);
-
-      return;
+    } catch (error) {
+      // User cancelled share
     }
 
-    await navigator.clipboard.writeText(PROFILE_URL);
+  } else {
 
-    showToast("Profile link copied!");
-
-  } catch (error) {
-
-    if (error.name !== "AbortError") {
-
-      try {
-
-        await navigator.clipboard.writeText(PROFILE_URL);
-
-        showToast("Profile link copied!");
-
-      } catch {
-
-        showToast(PROFILE_URL);
-      }
-
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast("PROFILE LINK COPIED");
+    } catch (error) {
+      showToast("COPY THIS LINK: " + url);
     }
 
   }
 }
 
 
-/* ================= SHARE QR ================= */
+// TOP SHARE
+document.getElementById("shareBtn")
+  .addEventListener("click", shareProfile);
 
-async function shareQR() {
 
-  const qrImage = document.querySelector(".qr-frame img");
+// PROFILE SHARE
+document.getElementById("shareProfile")
+  .addEventListener("click", shareProfile);
 
-  if (!qrImage) return;
 
-  try {
+// SAVE CONTACT
+document.getElementById("saveContact")
+  .addEventListener("click", () => {
 
-    const response = await fetch(qrImage.src);
+    const vcard =
+`BEGIN:VCARD
+VERSION:3.0
+FN:Prathamesh Vijay Mundhe
+N:Mundhe;Prathamesh Vijay;;;
+NICKNAME:PADDY
+TEL;TYPE=CELL:+919130957961
+EMAIL:mundheprathameshimp@gmail.com
+URL:${window.location.origin}${window.location.pathname}
+NOTE:Computer Engineering Student | PADDY017 | P17
+END:VCARD`;
 
-    const blob = await response.blob();
+    const blob = new Blob([vcard], {
+      type: "text/vcard;charset=utf-8"
+    });
 
-    const file = new File(
-      [blob],
-      "PADDY-PROFILE-17-QR.png",
-      {
-        type: blob.type || "image/png"
-      }
-    );
+    const url = URL.createObjectURL(blob);
 
-    if (
-      navigator.share &&
-      navigator.canShare &&
-      navigator.canShare({ files: [file] })
-    ) {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "PADDY-Contact.vcf";
 
-      await navigator.share({
-        title: "PADDY'S PROFILE 17",
-        text: "PADDY'S PROFILE 17",
-        files: [file]
-      });
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
 
-      return;
-    }
+    URL.revokeObjectURL(url);
 
-    await navigator.clipboard.writeText(PROFILE_URL);
+    showToast("CONTACT FILE CREATED");
 
-    showToast("Profile link copied!");
+  });
 
-  } catch {
+
+// SHARE QR
+document.getElementById("shareQr")
+  .addEventListener("click", async () => {
+
+    const qrImage = document.querySelector(".qr-wrap img");
 
     try {
 
-      await navigator.clipboard.writeText(PROFILE_URL);
+      if (navigator.share && navigator.canShare) {
 
-      showToast("Profile link copied!");
+        const response = await fetch(qrImage.src);
+        const blob = await response.blob();
 
-    } catch {
+        const file = new File(
+          [blob],
+          "PADDY-PROFILE-QR.png",
+          { type: blob.type }
+        );
 
-      showToast("Open the QR code section to scan.");
+        if (navigator.canShare({ files: [file] })) {
+
+          await navigator.share({
+            title: "PADDY'S PROFILE 17",
+            text: "Scan my profile QR code.",
+            files: [file]
+          });
+
+          return;
+        }
+      }
+
+      await navigator.clipboard.writeText(window.location.href);
+      showToast("PROFILE LINK COPIED");
+
+    } catch (error) {
+
+      showToast("QR SHARE CANCELLED");
+
     }
 
-  }
-}
+  });
 
 
-/* ================= EVENT LISTENERS ================= */
+// ACTIVE NAVIGATION
+const sections = document.querySelectorAll("main section[id]");
+const navLinks = document.querySelectorAll(".nav a");
 
-document.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("scroll", () => {
 
-  const shareBtn =
-    document.getElementById("shareBtn");
+  let current = "";
 
-  const shareProfileBtn =
-    document.getElementById("shareProfile");
+  sections.forEach(section => {
 
-  const shareQrBtn =
-    document.getElementById("shareQr");
+    const sectionTop = section.offsetTop - 150;
+
+    if (window.scrollY >= sectionTop) {
+      current = section.getAttribute("id");
+    }
+
+  });
+
+  navLinks.forEach(link => {
+
+    link.style.color = "";
+
+    if (link.getAttribute("href") === "#" + current) {
+      link.style.color = "#b78cff";
+    }
+
+  });
+
+});
 
 
-  if (shareBtn) {
+// SMOOTH INTERNAL LINKS
+document.querySelectorAll('a[href^="#"]').forEach(link => {
 
-    shareBtn.addEventListener(
-      "click",
-      shareProfile
+  link.addEventListener("click", event => {
+
+    const target = document.querySelector(
+      link.getAttribute("href")
     );
 
-  }
+    if (!target) return;
 
+    event.preventDefault();
 
-  if (shareProfileBtn) {
-
-    shareProfileBtn.addEventListener(
-      "click",
-      shareProfile
-    );
-
-  }
-
-
-  if (shareQrBtn) {
-
-    shareQrBtn.addEventListener(
-      "click",
-      shareQR
-    );
-
-  }
-
-
-  /* ================= SMOOTH NAVIGATION ================= */
-
-  document
-    .querySelectorAll('a[href^="#"]')
-    .forEach(link => {
-
-      link.addEventListener("click", event => {
-
-        const targetId =
-          link.getAttribute("href");
-
-        if (!targetId || targetId === "#") {
-          return;
-        }
-
-        const target =
-          document.querySelector(targetId);
-
-        if (!target) {
-          return;
-        }
-
-        event.preventDefault();
-
-        target.scrollIntoView({
-          behavior: "smooth",
-          block: "start"
-        });
-
-      });
-
+    target.scrollIntoView({
+      behavior: "smooth"
     });
 
+  });
 
-  /* ================= IMAGE ERROR CHECK ================= */
+});
 
-  document
-    .querySelectorAll("img")
-    .forEach(img => {
 
-      img.addEventListener("error", () => {
+// IMAGE ERROR CHECK
+document.querySelectorAll("img").forEach(img => {
 
-        img.classList.add("image-error");
+  img.addEventListener("error", () => {
 
-        if (
-          img.classList.contains("profile-image")
-        ) {
+    console.warn(
+      "Image not found:",
+      img.getAttribute("src")
+    );
 
-          img.alt =
-            "Profile image unavailable";
-
-        }
-
-      });
-
-    });
+  });
 
 });
